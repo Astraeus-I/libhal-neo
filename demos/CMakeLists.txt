@@ -30,7 +30,7 @@ find_package(libhal-${platform_library} REQUIRED CONFIG)
 find_package(libhal-neo REQUIRED CONFIG)
 find_package(libhal-util REQUIRED CONFIG)
 
-set(DEMOS neo-m9n)
+set(DEMOS neo)
 
 add_library(startup_code
     main.cpp

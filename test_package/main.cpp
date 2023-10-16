@@ -19,7 +19,7 @@
 #include <cstdlib>
 #include <exception>
 
-#include <libhal-neo/neo-m9n.hpp>
+#include <libhal-neo/neo.hpp>
 
 int main()
 {

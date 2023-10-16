@@ -43,7 +43,6 @@ hal::result<hardware_map> initialize_platform()
   static hal::cortex_m::dwt_counter counter(cpu_frequency);
 
   static std::array<hal::byte, 64> uart0_buffer{};
-
   static std::array<hal::byte, 812> uart3_buffer{};
 
   // Get and initialize UART0 for UART based logging

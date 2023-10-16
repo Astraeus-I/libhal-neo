@@ -64,7 +64,7 @@ the datasheet (and potentially mirrors of it) is an acceptable alternative.
 This directory contains demonstration applications showing how to use the device
 library. It includes:
 
-- `applications/neo-m9n.cpp`: A sample application demonstrating usage of the
+- `applications/neo.cpp`: A sample application demonstrating usage of the
   device library.
 - `hardware_map.hpp`: A header file defining the hardware map for the demo
   applications.
@@ -75,13 +75,13 @@ library. It includes:
 ## include/libhal-mpl
 
 This directory contains the header files for the device library. It currently
-includes `neo-m9n.hpp`, which is a placeholder for the main header file of
+includes `neo.hpp`, which is a placeholder for the main header file of
 your device library.
 
 ## src
 
 This directory contains the source files for the device library. It currently
-includes `neo-m9n.cpp`, which is a placeholder for the main source file of
+includes `neo.cpp`, which is a placeholder for the main source file of
 your device library.
 
 ## test_package
