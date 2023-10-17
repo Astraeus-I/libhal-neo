@@ -44,12 +44,24 @@ public:
 
   virtual ~nmea_parser() = default;
 
+  //   The used sentence identifiers are:
+  // * GGA – Global Positioning System Fix Data
+  // * VTG – Course over Ground and Ground Speed
+  // * GSA – GNSS DOP and Active Satellites
+  // * GSV – GNSS Satellites in View
+  // * RMC – Recommended Minimum Specific GNSS Data
+  // * ZDA – Time and Date
+  // * PASHR – Attitude Data
+
   enum class ParserType
   {
     GGA,
+    VTG,
     GSA,
     GSV,
     RMC,
+    ZDA,
+    PASHR
   };
 
   /**

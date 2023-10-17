@@ -199,7 +199,7 @@ std::span<const hal::byte> GGA_Sentence::parse(
                    &m_gga_data.height_of_geoid_units,
                    m_gga_data.dgps_station_id_checksum);
 
-  m_gga_data.is_locked = (ret < 7) ? false : true;
+  m_gga_data.is_locked = (ret < 5) ? false : true;
 
   return std::span<const hal::byte>(p_data);
 }

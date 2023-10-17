@@ -52,7 +52,9 @@ hal::status application(hardware_map& p_map)
     auto GSV = GPS_data.gsv_data;
     auto RMC = GPS_data.rmc_data;
 
-    hal::print(console, "====================================GPS READ====================================\n");
+    hal::print(console,
+               "====================================GPS "
+               "READ====================================\n");
 
     hal::print(
       console,
