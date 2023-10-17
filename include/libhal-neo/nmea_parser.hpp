@@ -42,6 +42,16 @@ public:
     active,
   };
 
+  virtual ~nmea_parser() = default;
+
+  enum class ParserType
+  {
+    GGA,
+    GSA,
+    GSV,
+    RMC,
+  };
+
   /**
    * @brief Parse byte data and find
    *
@@ -50,7 +60,10 @@ public:
    * @return std::span<hal::byte> - returns the remaining bytes not consumed
    * by this nmea sentence
    */
-  virtual std::span<const hal::byte> parse(std::span<const hal::byte> p_data) = 0;
+  virtual std::span<const hal::byte> parse(
+    std::span<const hal::byte> p_data) = 0;
+
+  virtual ParserType getType() const = 0;
 
   /**
    * @brief Reports the state of the parser
@@ -68,4 +81,4 @@ public:
 // void parse(std::span<nmea_parser*> p_parsers, std::span<hal::byte> p_data);
 // void parse(std::span<nmea_parser*> p_parsers, hal::serial p_serial);
 
-} // namespace hal
+}  // namespace hal::neo

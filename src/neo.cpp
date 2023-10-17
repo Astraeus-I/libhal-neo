@@ -28,8 +28,54 @@
 
 namespace hal::neo {
 
-nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
-                   std::span<const hal::byte> p_data)
+result<neo_gps> neo_gps::create(hal::serial& p_serial,
+                                std::vector<hal::neo::nmea_parser*>& p_parsers)
+{
+  neo_gps new_neo(p_serial, p_parsers);
+  return new_neo;
+}
+
+hal::result<std::span<const hal::byte>> neo_gps::read_serial()
+{
+  auto bytes_read_array = HAL_CHECK(m_serial->read(m_gps_buffer)).data;
+  return bytes_read_array;
+}
+
+hal::result<neo_gps::gps_data_t> neo_gps::read()
+{
+  auto bytes_read_array = HAL_CHECK(read_serial());
+  gps_sentences_t sentence_objs;
+  gps_data_t gps_data;
+
+  for (auto& parser_ptr : m_parsers) {
+    switch (parser_ptr->getType()) {
+      case nmea_parser::ParserType::GGA: {
+        sentence_objs.gga_sentece.parse(bytes_read_array);
+        gps_data.gga_data = sentence_objs.gga_sentece.read();
+      } break;
+      case nmea_parser::ParserType::GSA: {
+        sentence_objs.gsa_sentece.parse(bytes_read_array);
+        gps_data.gsa_data = sentence_objs.gsa_sentece.read();
+      } break;
+      case nmea_parser::ParserType::GSV: {
+        sentence_objs.gsv_sentece.parse(bytes_read_array);
+        gps_data.gsv_data = sentence_objs.gsv_sentece.read();
+      } break;
+      case nmea_parser::ParserType::RMC: {
+        sentence_objs.rmc_sentece.parse(bytes_read_array);
+        gps_data.rmc_data = sentence_objs.rmc_sentece.read();
+      } break;
+      default:
+        sentence_objs = sentence_objs;
+        break;
+    }
+  }
+
+  return result<neo_gps::gps_data_t>(gps_data);
+}
+
+neo_gps::nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
+                            std::span<const hal::byte> p_data)
 {
   bool end_token_found = false;
 
@@ -42,6 +88,26 @@ nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
   }
 
   return { p_data, end_token_found };
+}
+
+nmea_parser::ParserType GGA_Sentence::getType() const
+{
+  return nmea_parser::ParserType::GGA;
+}
+
+nmea_parser::ParserType GSA_Sentence::getType() const
+{
+  return nmea_parser::ParserType::GSA;
+}
+
+nmea_parser::ParserType GSV_Sentence::getType() const
+{
+  return nmea_parser::ParserType::GSV;
+}
+
+nmea_parser::ParserType RMC_Sentence::getType() const
+{
+  return nmea_parser::ParserType::RMC;
 }
 
 GGA_Sentence::GGA_Sentence()
@@ -117,13 +183,25 @@ std::span<const hal::byte> GGA_Sentence::parse(
     reinterpret_cast<const char*>(start_of_line_found.data()),
     remaining_data.data() - start_of_line_found.data());
 
-  // const char* p = gga_data.data();
-  // int state = 0;
-  // char temp[32];
-  // int index = 0;
+  int ret = sscanf(gga_data.data(),
+                   GGA_FORMAT,
+                   &m_gga_data.time,
+                   &m_gga_data.latitude,
+                   &m_gga_data.latitude_direction,
+                   &m_gga_data.longitude,
+                   &m_gga_data.longitude_direction,
+                   &m_gga_data.fix_status,
+                   &m_gga_data.satellites_used,
+                   &m_gga_data.hdop,
+                   &m_gga_data.altitude,
+                   &m_gga_data.altitude_units,
+                   &m_gga_data.height_of_geoid,
+                   &m_gga_data.height_of_geoid_units,
+                   m_gga_data.dgps_station_id_checksum);
 
+  m_gga_data.is_locked = (ret < 7) ? false : true;
 
-  return std::span<const hal::byte>(reinterpret_cast<const hal::byte*>(gga_data.data()), gga_data.size());
+  return std::span<const hal::byte>(p_data);
 }
 
 GGA_Sentence::gga_data_t GGA_Sentence::calculate_lon_lat(

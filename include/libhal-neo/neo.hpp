@@ -23,17 +23,9 @@
 #include <libhal-util/streams.hpp>
 #include <libhal/functional.hpp>
 #include <libhal/serial.hpp>
+#include <vector>
 
 namespace hal::neo {
-
-struct nmea_parse_t
-{
-  std::span<const hal::byte> remaining;
-  bool end_of_token_found;
-};
-
-nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
-                   std::span<const hal::byte> p_data);
 
 class GGA_Sentence : public nmea_parser
 {
@@ -62,6 +54,7 @@ public:
   void reset() override;
   gga_data_t read();
   gga_data_t calculate_lon_lat(const gga_data_t& p_gps_data);
+  nmea_parser::ParserType getType() const override;
 
 private:
   gga_data_t m_gga_data;
@@ -85,6 +78,7 @@ public:
   state_t state() override;
   void reset() override;
   gsa_data_t read();
+  nmea_parser::ParserType getType() const override;
 
 private:
   gsa_data_t m_gsa_data;
@@ -109,6 +103,7 @@ public:
   state_t state() override;
   void reset() override;
   satellite_data_t read();
+  nmea_parser::ParserType getType() const override;
 
 private:
   satellite_data_t m_satellite_data;
@@ -140,10 +135,58 @@ public:
   state_t state() override;
   void reset() override;
   rmc_data_t read();
+  nmea_parser::ParserType getType() const override;
 
 private:
   rmc_data_t m_rmc_data;
   nmea_parser::state_t m_state;
+};
+
+class neo_gps
+{
+
+public:
+  struct nmea_parse_t
+  {
+    std::span<const hal::byte> remaining;
+    bool end_of_token_found;
+  };
+
+  struct gps_sentences_t
+  {
+    GGA_Sentence gga_sentece;
+    GSA_Sentence gsa_sentece;
+    GSV_Sentence gsv_sentece;
+    RMC_Sentence rmc_sentece;
+  };
+
+  struct gps_data_t
+  {
+    GGA_Sentence::gga_data_t gga_data;
+    GSA_Sentence::gsa_data_t gsa_data;
+    GSV_Sentence::satellite_data_t gsv_data;
+    RMC_Sentence::rmc_data_t rmc_data;
+  };
+
+  [[nodiscard]] static result<neo_gps> create(
+    hal::serial& p_serial,
+    std::vector<hal::neo::nmea_parser*>& p_parsers);
+
+  nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
+                     std::span<const hal::byte> p_data);
+  hal::result<std::span<const hal::byte>> read_serial();
+  hal::result<gps_data_t> read();
+
+private:
+  neo_gps(hal::serial& p_serial, std::vector<hal::neo::nmea_parser*> p_parsers)
+    : m_serial(&p_serial)
+    , m_parsers(p_parsers)
+  {
+  }
+
+  hal::serial* m_serial;
+  std::array<hal::byte, 1020> m_gps_buffer;
+  std::vector<hal::neo::nmea_parser*> m_parsers;
 };
 
 }  // namespace hal::neo

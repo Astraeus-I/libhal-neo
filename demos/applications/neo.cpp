@@ -32,64 +32,27 @@ hal::status application(hardware_map& p_map)
   hal::neo::GSV_Sentence gsv_sentence;
   hal::neo::RMC_Sentence rmc_sentence;
 
-  std::array<hal::neo::nmea_parser*, 4> parsers = {
-    &rmc_sentence, &gsa_sentence, &gsv_sentence, &gga_sentence
+  std::vector<hal::neo::nmea_parser*> parsers = {
+    &gga_sentence, &gsa_sentence, &gsv_sentence, &rmc_sentence
   };
 
   hal::print(console, "Initializing GPS...\n");
+  auto GPS = HAL_CHECK(hal::neo::neo_gps::create(gps, parsers));
+
   hal::print(console, "GPS created! \n");
   hal::print(
     console,
     "***You may need to wait a few minutes before having a full GPS lock***\n");
 
   while (true) {
-    hal::delay(clock, 1000ms);
 
+    auto GPS_data = HAL_CHECK(GPS.read());
+    auto GGA = GPS_data.gga_data;
+    auto GSA = GPS_data.gsa_data;
+    auto GSV = GPS_data.gsv_data;
+    auto RMC = GPS_data.rmc_data;
 
-    std::array<hal::byte, 512> m_gps_buffer;
-    auto bytes_read_array = HAL_CHECK(gps.read(m_gps_buffer)).data;
-    auto end_token = hal::as_bytes("\r\n"sv);
-
-    hal::print(console, "============BYTES READ============\n");
-    hal::print(console, hal::as_bytes(bytes_read_array));
-    hal::print(console, "\n");
-
-    auto data = hal::neo::parse(parsers, bytes_read_array);
-
-    hal::print(console, "==================Remaining data==================\n");
-    hal::print(console, data.remaining);
-    hal::print(console, "\n");
-
-
-
-
-
-
-    // std::span<const hal::byte> remaining_data = data.remaining;
-
-    // while (!remaining_data.empty()) {
-    //   for (auto* parser : parsers) {
-    //     if (parser->state() == hal::neo::nmea_parser::state_t::active) {
-    //       remaining_data = parser->parse(remaining_data);
-    //       hal::print(console, remaining_data);
-    //       if (remaining_data.empty()) {
-    //         parser->reset();
-    //       } else {
-    //         break;
-    //       }
-    //     }
-    //   }
-    // }
-
-    auto GGA = gga_sentence.read();
-    auto GSA = gsa_sentence.read();
-    auto GSV = gsv_sentence.read();
-    auto RMC = rmc_sentence.read();
-
-    // if (GGA.is_locked == 0) {
-    //   hal::print(console, "No fix yet, need more satellite locks\n");
-    //   hal::print<128>(console, "Number of satellites seen: %d\n", GGA.satellites_used);
-    // }else{
+    hal::print(console, "====================================GPS READ====================================\n");
 
     hal::print(
       console,
@@ -103,8 +66,9 @@ hal::status application(hardware_map& p_map)
                     GGA.satellites_used,
                     GGA.altitude);
 
-    hal::print(console,
-               "\n=================== GPS Status Data (GSA) ===================\n");
+    hal::print(
+      console,
+      "\n=================== GPS Status Data (GSA) ===================\n");
     hal::print<128>(console,
                     "Fix type: %d\nFix mode: %c\nPDOP: %f\nHDOP: %f\nVDOP: "
                     "%f\n",
@@ -125,17 +89,20 @@ hal::status application(hardware_map& p_map)
                     GSV.azimuth,
                     GSV.snr);
 
-    hal::print(console,
-               "\n=================== GPS Speed Data (RMC) ===================\n");
-    hal::print<128>(console,
-                    "Time: %f\nSpeed: %f\nTrack angle: %f\nMagnetic direction: %c\n",
-                    RMC.time,
-                    RMC.speed,
-                    RMC.track_angle,
-                    RMC.magnetic_direction);
+    hal::print(
+      console,
+      "\n=================== GPS Speed Data (RMC) ===================\n");
+    hal::print<128>(
+      console,
+      "Time: %f\nSpeed: %f\nTrack angle: %f\nMagnetic direction: %c\n",
+      RMC.time,
+      RMC.speed,
+      RMC.track_angle,
+      RMC.magnetic_direction);
 
-                    hal::print<128>(console, "Reading Status RMC: %d\n", RMC.reading_status);
-    // }
+    hal::print<128>(console, "Reading Status RMC: %d\n", RMC.reading_status);
+
+    hal::delay(clock, 1000ms);
   }
 
   return hal::success();
