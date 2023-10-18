@@ -28,71 +28,14 @@
 
 namespace hal::neo {
 
-result<neo_gps> neo_gps::create(hal::serial& p_serial,
-                                std::vector<hal::neo::nmea_parser*>& p_parsers)
-{
-  neo_gps new_neo(p_serial, p_parsers);
-  return new_neo;
-}
-
-hal::result<std::span<const hal::byte>> neo_gps::read_serial()
-{
-  auto bytes_read_array = HAL_CHECK(m_serial->read(m_gps_buffer)).data;
-  return bytes_read_array;
-}
-
-hal::result<neo_gps::gps_data_t> neo_gps::read()
-{
-  auto bytes_read_array = HAL_CHECK(read_serial());
-  gps_sentences_t sentence_objs;
-  gps_data_t gps_data;
-
-  for (auto& parser_ptr : m_parsers) {
-    switch (parser_ptr->getType()) {
-      case nmea_parser::ParserType::GGA: {
-        sentence_objs.gga_sentece.parse(bytes_read_array);
-        gps_data.gga_data = sentence_objs.gga_sentece.read();
-      } break;
-      case nmea_parser::ParserType::GSA: {
-        sentence_objs.gsa_sentece.parse(bytes_read_array);
-        gps_data.gsa_data = sentence_objs.gsa_sentece.read();
-      } break;
-      case nmea_parser::ParserType::GSV: {
-        sentence_objs.gsv_sentece.parse(bytes_read_array);
-        gps_data.gsv_data = sentence_objs.gsv_sentece.read();
-      } break;
-      case nmea_parser::ParserType::RMC: {
-        sentence_objs.rmc_sentece.parse(bytes_read_array);
-        gps_data.rmc_data = sentence_objs.rmc_sentece.read();
-      } break;
-      default:
-        sentence_objs = sentence_objs;
-        break;
-    }
-  }
-
-  return result<neo_gps::gps_data_t>(gps_data);
-}
-
-neo_gps::nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
-                            std::span<const hal::byte> p_data)
-{
-  bool end_token_found = false;
-
-  if (!p_data.empty()) {
-    for (auto& parser : p_parsers) {
-      if (parser->state() == nmea_parser::state_t::inactive) {
-        p_data = parser->parse(p_data);
-      }
-    }
-  }
-
-  return { p_data, end_token_found };
-}
-
 nmea_parser::ParserType GGA_Sentence::getType() const
 {
   return nmea_parser::ParserType::GGA;
+}
+
+nmea_parser::ParserType VTG_Sentence::getType() const
+{
+  return nmea_parser::ParserType::VTG;
 }
 
 nmea_parser::ParserType GSA_Sentence::getType() const
@@ -110,7 +53,21 @@ nmea_parser::ParserType RMC_Sentence::getType() const
   return nmea_parser::ParserType::RMC;
 }
 
+nmea_parser::ParserType ZDA_Sentence::getType() const
+{
+  return nmea_parser::ParserType::ZDA;
+}
+
+nmea_parser::ParserType PASHR_Sentence::getType() const
+{
+  return nmea_parser::ParserType::PASHR;
+}
+
 GGA_Sentence::GGA_Sentence()
+{
+}
+
+VTG_Sentence::VTG_Sentence()
 {
 }
 
@@ -126,7 +83,20 @@ RMC_Sentence::RMC_Sentence()
 {
 }
 
+ZDA_Sentence::ZDA_Sentence()
+{
+}
+
+PASHR_Sentence::PASHR_Sentence()
+{
+}
+
 nmea_parser::state_t GGA_Sentence::state()
+{
+  return m_state;
+}
+
+nmea_parser::state_t VTG_Sentence::state()
 {
   return m_state;
 }
@@ -146,7 +116,22 @@ nmea_parser::state_t RMC_Sentence::state()
   return m_state;
 }
 
+nmea_parser::state_t ZDA_Sentence::state()
+{
+  return m_state;
+}
+
+nmea_parser::state_t PASHR_Sentence::state()
+{
+  return m_state;
+}
+
 void GGA_Sentence::reset()
+{
+  m_state = state_t::inactive;
+}
+
+void VTG_Sentence::reset()
 {
   m_state = state_t::inactive;
 }
@@ -162,6 +147,16 @@ void GSV_Sentence::reset()
 }
 
 void RMC_Sentence::reset()
+{
+  m_state = state_t::inactive;
+}
+
+void ZDA_Sentence::reset()
+{
+  m_state = state_t::inactive;
+}
+
+void PASHR_Sentence::reset()
 {
   m_state = state_t::inactive;
 }
@@ -241,6 +236,42 @@ GGA_Sentence::gga_data_t GGA_Sentence::read()
   return GGA_Sentence::gga_data_t(data);
 }
 
+std::span<const hal::byte> VTG_Sentence::parse(
+  std::span<const hal::byte> p_data)
+{
+  using namespace std::literals;
+  m_state = state_t::active;
+
+  auto start_of_line_finder =
+    hal::stream_find(hal::as_bytes(vtg_start_of_line));
+  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
+
+  auto start_of_line_found = p_data | start_of_line_finder;
+  auto remaining_data = start_of_line_found | end_of_line_finder;
+
+  std::string_view vtg_data(
+    reinterpret_cast<const char*>(start_of_line_found.data()),
+    remaining_data.data() - start_of_line_found.data());
+
+  sscanf(vtg_data.data(),
+         VTG_FORMAT,
+         &m_vtg_data.true_track_degrees,
+         &m_vtg_data.true_track_degrees_t,
+         &m_vtg_data.magnetic_track_degrees,
+         &m_vtg_data.magnetic_track_degrees_t,
+         &m_vtg_data.ground_speed_knots,
+         &m_vtg_data.ground_speed_knots_n,
+         &m_vtg_data.ground_speed_kph,
+         &m_vtg_data.ground_speed_kph_k);
+
+  return std::span<const hal::byte>(p_data);
+}
+
+VTG_Sentence::vtg_data_t VTG_Sentence::read()
+{
+  return VTG_Sentence::vtg_data_t(m_vtg_data);
+}
+
 std::span<const hal::byte> GSA_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
@@ -258,25 +289,25 @@ std::span<const hal::byte> GSA_Sentence::parse(
     reinterpret_cast<const char*>(start_of_line_found.data()),
     remaining_data.data() - start_of_line_found.data());
 
-  int ret = sscanf(gsa_data.data(),
-                   GSA_FORMAT,
-                   &m_gsa_data.mode,
-                   &m_gsa_data.fix_type,
-                   &m_gsa_data.satellite_ids[0],
-                   &m_gsa_data.satellite_ids[1],
-                   &m_gsa_data.satellite_ids[2],
-                   &m_gsa_data.satellite_ids[3],
-                   &m_gsa_data.satellite_ids[4],
-                   &m_gsa_data.satellite_ids[5],
-                   &m_gsa_data.satellite_ids[6],
-                   &m_gsa_data.satellite_ids[7],
-                   &m_gsa_data.satellite_ids[8],
-                   &m_gsa_data.satellite_ids[9],
-                   &m_gsa_data.satellite_ids[10],
-                   &m_gsa_data.satellite_ids[11],
-                   &m_gsa_data.pdop,
-                   &m_gsa_data.hdop,
-                   &m_gsa_data.vdop);
+  sscanf(gsa_data.data(),
+         GSA_FORMAT,
+         &m_gsa_data.mode,
+         &m_gsa_data.fix_type,
+         &m_gsa_data.satellite_ids[0],
+         &m_gsa_data.satellite_ids[1],
+         &m_gsa_data.satellite_ids[2],
+         &m_gsa_data.satellite_ids[3],
+         &m_gsa_data.satellite_ids[4],
+         &m_gsa_data.satellite_ids[5],
+         &m_gsa_data.satellite_ids[6],
+         &m_gsa_data.satellite_ids[7],
+         &m_gsa_data.satellite_ids[8],
+         &m_gsa_data.satellite_ids[9],
+         &m_gsa_data.satellite_ids[10],
+         &m_gsa_data.satellite_ids[11],
+         &m_gsa_data.pdop,
+         &m_gsa_data.hdop,
+         &m_gsa_data.vdop);
 
   return std::span<const hal::byte>(p_data);
 }
@@ -303,15 +334,15 @@ std::span<const hal::byte> GSV_Sentence::parse(
     reinterpret_cast<const char*>(start_of_line_found.data()),
     remaining_data.data() - start_of_line_found.data());
 
-  int ret = sscanf(gsv_data.data(),
-                   GSV_FORMAT,
-                   &m_satellite_data.number_of_messages,
-                   &m_satellite_data.message_number,
-                   &m_satellite_data.satellites_in_view,
-                   &m_satellite_data.id,
-                   &m_satellite_data.elevation,
-                   &m_satellite_data.azimuth,
-                   &m_satellite_data.snr);
+  sscanf(gsv_data.data(),
+         GSV_FORMAT,
+         &m_satellite_data.number_of_messages,
+         &m_satellite_data.message_number,
+         &m_satellite_data.satellites_in_view,
+         &m_satellite_data.id,
+         &m_satellite_data.elevation,
+         &m_satellite_data.azimuth,
+         &m_satellite_data.snr);
 
   return std::span<const hal::byte>(p_data);
 }
@@ -360,6 +391,152 @@ std::span<const hal::byte> RMC_Sentence::parse(
 RMC_Sentence::rmc_data_t RMC_Sentence::read()
 {
   return RMC_Sentence::rmc_data_t(m_rmc_data);
+}
+
+std::span<const hal::byte> ZDA_Sentence::parse(
+  std::span<const hal::byte> p_data)
+{
+  using namespace std::literals;
+  m_state = state_t::active;
+
+  auto start_of_line_finder =
+    hal::stream_find(hal::as_bytes(zda_start_of_line));
+  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
+
+  auto start_of_line_found = p_data | start_of_line_finder;
+  auto remaining_data = start_of_line_found | end_of_line_finder;
+
+  std::string_view zda_data(
+    reinterpret_cast<const char*>(start_of_line_found.data()),
+    remaining_data.data() - start_of_line_found.data());
+
+  sscanf(zda_data.data(),
+         ZDA_FORMAT,
+         &m_zda_data.time,
+         &m_zda_data.day,
+         &m_zda_data.month,
+         &m_zda_data.year);
+
+  return std::span<const hal::byte>(p_data);
+}
+
+ZDA_Sentence::zda_data_t ZDA_Sentence::read()
+{
+  return ZDA_Sentence::zda_data_t(m_zda_data);
+}
+
+std::span<const hal::byte> PASHR_Sentence::parse(
+  std::span<const hal::byte> p_data)
+{
+  using namespace std::literals;
+  m_state = state_t::active;
+
+  auto start_of_line_finder =
+    hal::stream_find(hal::as_bytes(pashr_start_of_line));
+  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
+
+  auto start_of_line_found = p_data | start_of_line_finder;
+  auto remaining_data = start_of_line_found | end_of_line_finder;
+
+  std::string_view pashr_data(
+    reinterpret_cast<const char*>(start_of_line_found.data()),
+    remaining_data.data() - start_of_line_found.data());
+
+  sscanf(pashr_data.data(),
+         PASHR_FORMAT,
+         &m_pashr_data.heading,
+         &m_pashr_data.pitch,
+         &m_pashr_data.roll,
+         &m_pashr_data.heave,
+         &m_pashr_data.yaw,
+         &m_pashr_data.tilt,
+         &m_pashr_data.roll_accuracy,
+         &m_pashr_data.pitch_accuracy,
+         &m_pashr_data.heading_accuracy,
+         &m_pashr_data.heave_accuracy,
+         &m_pashr_data.yaw_accuracy,
+         &m_pashr_data.tilt_accuracy);
+
+  return std::span<const hal::byte>(p_data);
+}
+
+PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
+{
+  return PASHR_Sentence::pashr_data_t(m_pashr_data);
+}
+
+result<neo_gps> neo_gps::create(hal::serial& p_serial,
+                                std::vector<hal::neo::nmea_parser*>& p_parsers)
+{
+  neo_gps new_neo(p_serial, p_parsers);
+  return new_neo;
+}
+
+hal::result<std::span<const hal::byte>> neo_gps::read_serial()
+{
+  auto bytes_read_array = HAL_CHECK(m_serial->read(m_gps_buffer)).data;
+  return bytes_read_array;
+}
+
+hal::result<neo_gps::gps_data_t> neo_gps::read()
+{
+  auto bytes_read_array = HAL_CHECK(read_serial());
+  gps_sentences_t sentence_objs;
+  gps_data_t gps_data;
+
+  for (auto& parser_ptr : m_parsers) {
+    switch (parser_ptr->getType()) {
+      case nmea_parser::ParserType::GGA: {
+        sentence_objs.gga_sentece.parse(bytes_read_array);
+        gps_data.gga_data = sentence_objs.gga_sentece.read();
+      } break;
+      case nmea_parser::ParserType::VTG: {
+        sentence_objs.vtg_sentece.parse(bytes_read_array);
+        gps_data.vtg_data = sentence_objs.vtg_sentece.read();
+      } break;
+      case nmea_parser::ParserType::GSA: {
+        sentence_objs.gsa_sentece.parse(bytes_read_array);
+        gps_data.gsa_data = sentence_objs.gsa_sentece.read();
+      } break;
+      case nmea_parser::ParserType::GSV: {
+        sentence_objs.gsv_sentece.parse(bytes_read_array);
+        gps_data.gsv_data = sentence_objs.gsv_sentece.read();
+      } break;
+      case nmea_parser::ParserType::RMC: {
+        sentence_objs.rmc_sentece.parse(bytes_read_array);
+        gps_data.rmc_data = sentence_objs.rmc_sentece.read();
+      } break;
+      case nmea_parser::ParserType::ZDA: {
+        sentence_objs.zda_sentece.parse(bytes_read_array);
+        gps_data.zda_data = sentence_objs.zda_sentece.read();
+      } break;
+      case nmea_parser::ParserType::PASHR: {
+        sentence_objs.pashr_sentece.parse(bytes_read_array);
+        gps_data.pashr_data = sentence_objs.pashr_sentece.read();
+      } break;
+      default:
+        sentence_objs = sentence_objs;
+        break;
+    }
+  }
+
+  return result<neo_gps::gps_data_t>(gps_data);
+}
+
+neo_gps::nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
+                            std::span<const hal::byte> p_data)
+{
+  bool end_token_found = false;
+
+  if (!p_data.empty()) {
+    for (auto& parser : p_parsers) {
+      if (parser->state() == nmea_parser::state_t::inactive) {
+        p_data = parser->parse(p_data);
+      }
+    }
+  }
+
+  return { p_data, end_token_found };
 }
 
 }  // namespace hal::neo

@@ -61,6 +61,33 @@ private:
   nmea_parser::state_t m_state;
 };
 
+class VTG_Sentence : public nmea_parser
+{
+public:
+  VTG_Sentence();
+  struct vtg_data_t
+  {
+    float true_track_degrees;
+    char true_track_degrees_t;
+    float magnetic_track_degrees;
+    char magnetic_track_degrees_t;
+    float ground_speed_knots;
+    char ground_speed_knots_n;
+    float ground_speed_kph;
+    char ground_speed_kph_k;
+    char mode;
+  };
+  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  state_t state() override;
+  void reset() override;
+  vtg_data_t read();
+  nmea_parser::ParserType getType() const override;
+
+private:
+  vtg_data_t m_vtg_data;
+  nmea_parser::state_t m_state;
+};
+
 class GSA_Sentence : public nmea_parser
 {
 public:
@@ -142,6 +169,58 @@ private:
   nmea_parser::state_t m_state;
 };
 
+class ZDA_Sentence : public nmea_parser
+{
+public:
+  ZDA_Sentence();
+  struct zda_data_t
+  {
+    float time;
+    int day;
+    int month;
+    int year;
+  };
+  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  state_t state() override;
+  void reset() override;
+  zda_data_t read();
+  nmea_parser::ParserType getType() const override;
+
+private:
+  zda_data_t m_zda_data;
+  nmea_parser::state_t m_state;
+};
+
+class PASHR_Sentence : public nmea_parser
+{
+public:
+  PASHR_Sentence();
+  struct pashr_data_t
+  {
+    float heading;
+    float pitch;
+    float roll;
+    float heave;
+    float yaw;
+    float tilt;
+    float roll_accuracy;
+    float pitch_accuracy;
+    float heading_accuracy;
+    float heave_accuracy;
+    float yaw_accuracy;
+    float tilt_accuracy;
+  };
+  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  state_t state() override;
+  void reset() override;
+  pashr_data_t read();
+  nmea_parser::ParserType getType() const override;
+
+private:
+  pashr_data_t m_pashr_data;
+  nmea_parser::state_t m_state;
+};
+
 class neo_gps
 {
 
@@ -155,17 +234,23 @@ public:
   struct gps_sentences_t
   {
     GGA_Sentence gga_sentece;
+    VTG_Sentence vtg_sentece;
     GSA_Sentence gsa_sentece;
     GSV_Sentence gsv_sentece;
     RMC_Sentence rmc_sentece;
+    ZDA_Sentence zda_sentece;
+    PASHR_Sentence pashr_sentece;
   };
 
   struct gps_data_t
   {
     GGA_Sentence::gga_data_t gga_data;
+    VTG_Sentence::vtg_data_t vtg_data;
     GSA_Sentence::gsa_data_t gsa_data;
     GSV_Sentence::satellite_data_t gsv_data;
     RMC_Sentence::rmc_data_t rmc_data;
+    ZDA_Sentence::zda_data_t zda_data;
+    PASHR_Sentence::pashr_data_t pashr_data;
   };
 
   [[nodiscard]] static result<neo_gps> create(

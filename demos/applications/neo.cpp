@@ -28,13 +28,17 @@ hal::status application(hardware_map& p_map)
   auto& gps = *p_map.gps;
 
   hal::neo::GGA_Sentence gga_sentence;
+  hal::neo::VTG_Sentence vtg_sentence;
   hal::neo::GSA_Sentence gsa_sentence;
   hal::neo::GSV_Sentence gsv_sentence;
   hal::neo::RMC_Sentence rmc_sentence;
+  hal::neo::ZDA_Sentence zda_sentence;
+  hal::neo::PASHR_Sentence pashr_sentence;
 
-  std::vector<hal::neo::nmea_parser*> parsers = {
-    &gga_sentence, &gsa_sentence, &gsv_sentence, &rmc_sentence
-  };
+  std::vector<hal::neo::nmea_parser*> parsers = { &gga_sentence,  &vtg_sentence,
+                                                  &gsa_sentence,  &gsv_sentence,
+                                                  &rmc_sentence,  &zda_sentence,
+                                                  &pashr_sentence };
 
   hal::print(console, "Initializing GPS...\n");
   auto GPS = HAL_CHECK(hal::neo::neo_gps::create(gps, parsers));
@@ -47,10 +51,14 @@ hal::status application(hardware_map& p_map)
   while (true) {
 
     auto GPS_data = HAL_CHECK(GPS.read());
+
     auto GGA = GPS_data.gga_data;
+    auto VTG = GPS_data.vtg_data;
     auto GSA = GPS_data.gsa_data;
     auto GSV = GPS_data.gsv_data;
     auto RMC = GPS_data.rmc_data;
+    auto ZDA = GPS_data.zda_data;
+    auto PASHR = GPS_data.pashr_data;
 
     hal::print(console,
                "====================================GPS "
@@ -82,6 +90,26 @@ hal::status application(hardware_map& p_map)
 
     hal::print(
       console,
+      "\n=================== GPS Velocity Data (VTG) ===================\n");
+    hal::print<128>(
+      console,
+      "True track degrees: %f\nTrue track degrees type: %c\n"
+      "Magnetic track degrees: %f\nMagnetic track degrees type: "
+      "%c\nGround speed knots: %f\nGround speed knots type: "
+      "%c\nGround speed kph: %f\nGround speed kph type: %c\nMode: "
+      "%c\n",
+      VTG.true_track_degrees,
+      VTG.true_track_degrees_t,
+      VTG.magnetic_track_degrees,
+      VTG.magnetic_track_degrees_t,
+      VTG.ground_speed_knots,
+      VTG.ground_speed_knots_n,
+      VTG.ground_speed_kph,
+      VTG.ground_speed_kph_k,
+      VTG.mode);
+
+    hal::print(
+      console,
       "\n=================== GPS Satellite Data (GSV) ===================\n");
     hal::print<128>(console,
                     "Satellites in view: %d\nElevation: %d\nAzimuth: %d\nSNR: "
@@ -103,6 +131,44 @@ hal::status application(hardware_map& p_map)
       RMC.magnetic_direction);
 
     hal::print<128>(console, "Reading Status RMC: %d\n", RMC.reading_status);
+
+    hal::print(
+      console,
+      "\n=================== GPS Time Data (ZDA) ===================\n");
+
+    hal::print<128>(console,
+                    "Time: %f\nDay: %d\nMonth: %d\nYear: %d\n",
+                    ZDA.time,
+                    ZDA.day,
+                    ZDA.month,
+                    ZDA.year);
+
+
+
+    // hal::print(
+    //   console,
+    //   "\n=================== GPS Attitude Data (PASHR) ===================\n");
+    // hal::print<128>(console,
+    //                 "Heading: %f\nPitch: %f\nRoll: %f\nHeave: %f\nYaw: "
+    //                 "%f\nTilt: %f\nRoll Accuracy: %f\nPitch Accuracy: "
+    //                 "%f\nHeading Accuracy: %f\nHeave Accuracy: "
+    //                 "%f\nYaw Accuracy: %f\nTilt Accuracy: %f\n",
+    //                 PASHR.heading,
+    //                 PASHR.pitch,
+    //                 PASHR.roll,
+    //                 PASHR.heave,
+    //                 PASHR.yaw,
+    //                 PASHR.tilt,
+    //                 PASHR.roll_accuracy,
+    //                 PASHR.pitch_accuracy,
+    //                 PASHR.heading_accuracy,
+    //                 PASHR.heave_accuracy,
+    //                 PASHR.yaw_accuracy,
+    //                 PASHR.tilt_accuracy);
+
+    // hal::print(console,
+    //            "==============================================================="
+    //            "=================\n");
 
     hal::delay(clock, 1000ms);
   }

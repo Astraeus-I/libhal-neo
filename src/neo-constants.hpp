@@ -59,7 +59,7 @@ const char* ZDA_FORMAT = ",%f,%d,%d,%d,,*";
 // $GNZDA,185823.40,13,01,2017,,*7E
 
 
-const char* PASH = ",%f,%f,%c,%f,%c,%f,%f,%f,%f,%f,%f,%d*";
+const char* PASHR_FORMAT = ",%f,%f,%c,%f,%c,%f,%f,%f,%f,%f,%f,%d*";
 // Example:
 // $PASHR,190558.56,107.09,T,,-0.16,,,0.067,0.056,2*34
 
