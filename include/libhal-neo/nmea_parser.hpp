@@ -53,16 +53,12 @@ public:
   // * ZDA – Time and Date
   // * PASHR – Attitude Data
 
-  enum class ParserType
-  {
-    GGA,
-    VTG,
-    GSA,
-    GSV,
-    RMC,
-    ZDA,
-    PASHR
-  };
+  /**
+   * @brief Get the sentence header for this parser.
+   *
+   * @return std::string - The sentence header unique to this parser.
+   */
+  virtual std::string sentence_header() const = 0;
 
   /**
    * @brief Parse byte data and find
@@ -74,20 +70,6 @@ public:
    */
   virtual std::span<const hal::byte> parse(
     std::span<const hal::byte> p_data) = 0;
-
-  virtual ParserType getType() const = 0;
-
-  /**
-   * @brief Reports the state of the parser
-   *
-   * @return state_t - state of the parser
-   */
-  virtual state_t state() = 0;
-
-  /**
-   * @brief Reset the parser to the initial state
-   */
-  virtual void reset() = 0;
 };
 
 // void parse(std::span<nmea_parser*> p_parsers, std::span<hal::byte> p_data);

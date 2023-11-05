@@ -33,15 +33,9 @@ hal::status application(hardware_map& p_map)
   hal::neo::GSV_Sentence gsv_sentence;
   hal::neo::RMC_Sentence rmc_sentence;
   hal::neo::ZDA_Sentence zda_sentence;
-  hal::neo::PASHR_Sentence pashr_sentence;
-
-  std::vector<hal::neo::nmea_parser*> parsers = { &gga_sentence,  &vtg_sentence,
-                                                  &gsa_sentence,  &gsv_sentence,
-                                                  &rmc_sentence,  &zda_sentence,
-                                                  &pashr_sentence };
 
   hal::print(console, "Initializing GPS...\n");
-  auto GPS = HAL_CHECK(hal::neo::neo_gps::create(gps, parsers));
+  auto GPS = HAL_CHECK(hal::neo::nmea_router::create(gps));
 
   hal::print(console, "GPS created! \n");
   hal::print(
@@ -50,15 +44,15 @@ hal::status application(hardware_map& p_map)
 
   while (true) {
 
-    auto GPS_data = HAL_CHECK(GPS.read());
+    auto GPS_data = HAL_CHECK(GPS.read_serial());
+    HAL_CHECK(GPS.route(GPS_data));
 
-    auto GGA = GPS_data.gga_data;
-    auto VTG = GPS_data.vtg_data;
-    auto GSA = GPS_data.gsa_data;
-    auto GSV = GPS_data.gsv_data;
-    auto RMC = GPS_data.rmc_data;
-    auto ZDA = GPS_data.zda_data;
-    auto PASHR = GPS_data.pashr_data;
+    auto GGA = gga_sentence.read();
+    auto VTG = vtg_sentence.read();
+    auto GSA = gsa_sentence.read();
+    auto GSV = gsv_sentence.read();
+    auto RMC = rmc_sentence.read();
+    auto ZDA = zda_sentence.read();
 
     hal::print(console,
                "====================================GPS "
@@ -142,33 +136,6 @@ hal::status application(hardware_map& p_map)
                     ZDA.day,
                     ZDA.month,
                     ZDA.year);
-
-
-
-    // hal::print(
-    //   console,
-    //   "\n=================== GPS Attitude Data (PASHR) ===================\n");
-    // hal::print<128>(console,
-    //                 "Heading: %f\nPitch: %f\nRoll: %f\nHeave: %f\nYaw: "
-    //                 "%f\nTilt: %f\nRoll Accuracy: %f\nPitch Accuracy: "
-    //                 "%f\nHeading Accuracy: %f\nHeave Accuracy: "
-    //                 "%f\nYaw Accuracy: %f\nTilt Accuracy: %f\n",
-    //                 PASHR.heading,
-    //                 PASHR.pitch,
-    //                 PASHR.roll,
-    //                 PASHR.heave,
-    //                 PASHR.yaw,
-    //                 PASHR.tilt,
-    //                 PASHR.roll_accuracy,
-    //                 PASHR.pitch_accuracy,
-    //                 PASHR.heading_accuracy,
-    //                 PASHR.heave_accuracy,
-    //                 PASHR.yaw_accuracy,
-    //                 PASHR.tilt_accuracy);
-
-    // hal::print(console,
-    //            "==============================================================="
-    //            "=================\n");
 
     hal::delay(clock, 1000ms);
   }

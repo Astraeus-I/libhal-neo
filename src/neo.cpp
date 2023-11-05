@@ -28,41 +28,6 @@
 
 namespace hal::neo {
 
-nmea_parser::ParserType GGA_Sentence::getType() const
-{
-  return nmea_parser::ParserType::GGA;
-}
-
-nmea_parser::ParserType VTG_Sentence::getType() const
-{
-  return nmea_parser::ParserType::VTG;
-}
-
-nmea_parser::ParserType GSA_Sentence::getType() const
-{
-  return nmea_parser::ParserType::GSA;
-}
-
-nmea_parser::ParserType GSV_Sentence::getType() const
-{
-  return nmea_parser::ParserType::GSV;
-}
-
-nmea_parser::ParserType RMC_Sentence::getType() const
-{
-  return nmea_parser::ParserType::RMC;
-}
-
-nmea_parser::ParserType ZDA_Sentence::getType() const
-{
-  return nmea_parser::ParserType::ZDA;
-}
-
-nmea_parser::ParserType PASHR_Sentence::getType() const
-{
-  return nmea_parser::ParserType::PASHR;
-}
-
 GGA_Sentence::GGA_Sentence()
 {
 }
@@ -91,81 +56,45 @@ PASHR_Sentence::PASHR_Sentence()
 {
 }
 
-nmea_parser::state_t GGA_Sentence::state()
+std::string GGA_Sentence::sentence_header() const
 {
-  return m_state;
+  return std::string(gga_start_of_line);
 }
 
-nmea_parser::state_t VTG_Sentence::state()
+std::string VTG_Sentence::sentence_header() const
 {
-  return m_state;
+  return std::string(vtg_start_of_line);
 }
 
-nmea_parser::state_t GSA_Sentence::state()
+std::string GSA_Sentence::sentence_header() const
 {
-  return m_state;
+  return std::string(gsa_start_of_line);
 }
 
-nmea_parser::state_t GSV_Sentence::state()
+std::string GSV_Sentence::sentence_header() const
 {
-  return m_state;
+  return std::string(gsv_start_of_line);
 }
 
-nmea_parser::state_t RMC_Sentence::state()
+std::string RMC_Sentence::sentence_header() const
 {
-  return m_state;
+  return std::string(rmc_start_of_line);
 }
 
-nmea_parser::state_t ZDA_Sentence::state()
+std::string ZDA_Sentence::sentence_header() const
 {
-  return m_state;
+  return std::string(zda_start_of_line);
 }
 
-nmea_parser::state_t PASHR_Sentence::state()
+std::string PASHR_Sentence::sentence_header() const
 {
-  return m_state;
-}
-
-void GGA_Sentence::reset()
-{
-  m_state = state_t::inactive;
-}
-
-void VTG_Sentence::reset()
-{
-  m_state = state_t::inactive;
-}
-
-void GSA_Sentence::reset()
-{
-  m_state = state_t::inactive;
-}
-
-void GSV_Sentence::reset()
-{
-  m_state = state_t::inactive;
-}
-
-void RMC_Sentence::reset()
-{
-  m_state = state_t::inactive;
-}
-
-void ZDA_Sentence::reset()
-{
-  m_state = state_t::inactive;
-}
-
-void PASHR_Sentence::reset()
-{
-  m_state = state_t::inactive;
+  return std::string(pashr_start_of_line);
 }
 
 std::span<const hal::byte> GGA_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
   using namespace std::literals;
-  m_state = state_t::active;
 
   auto start_of_line_finder =
     hal::stream_find(hal::as_bytes(gga_start_of_line));
@@ -240,7 +169,6 @@ std::span<const hal::byte> VTG_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
   using namespace std::literals;
-  m_state = state_t::active;
 
   auto start_of_line_finder =
     hal::stream_find(hal::as_bytes(vtg_start_of_line));
@@ -276,7 +204,6 @@ std::span<const hal::byte> GSA_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
   using namespace std::literals;
-  m_state = state_t::active;
 
   auto start_of_line_finder =
     hal::stream_find(hal::as_bytes(gsa_start_of_line));
@@ -321,7 +248,6 @@ std::span<const hal::byte> GSV_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
   using namespace std::literals;
-  m_state = state_t::active;
 
   auto start_of_line_finder =
     hal::stream_find(hal::as_bytes(gsv_start_of_line));
@@ -356,7 +282,6 @@ std::span<const hal::byte> RMC_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
   using namespace std::literals;
-  m_state = state_t::active;
 
   auto start_of_line_finder =
     hal::stream_find(hal::as_bytes(rmc_start_of_line));
@@ -397,7 +322,6 @@ std::span<const hal::byte> ZDA_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
   using namespace std::literals;
-  m_state = state_t::active;
 
   auto start_of_line_finder =
     hal::stream_find(hal::as_bytes(zda_start_of_line));
@@ -429,7 +353,6 @@ std::span<const hal::byte> PASHR_Sentence::parse(
   std::span<const hal::byte> p_data)
 {
   using namespace std::literals;
-  m_state = state_t::active;
 
   auto start_of_line_finder =
     hal::stream_find(hal::as_bytes(pashr_start_of_line));
@@ -465,78 +388,46 @@ PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
   return PASHR_Sentence::pashr_data_t(m_pashr_data);
 }
 
-result<neo_gps> neo_gps::create(hal::serial& p_serial,
-                                std::vector<hal::neo::nmea_parser*>& p_parsers)
+
+
+
+
+
+result<nmea_router> nmea_router::create(hal::serial& p_serial)
 {
-  neo_gps new_neo(p_serial, p_parsers);
-  return new_neo;
+  nmea_router new_nmea_router(p_serial);
+  return new_nmea_router;
 }
 
-hal::result<std::span<const hal::byte>> neo_gps::read_serial()
+hal::result<std::span<const hal::byte>> nmea_router::read_serial()
 {
   auto bytes_read_array = HAL_CHECK(m_serial->read(m_gps_buffer)).data;
   return bytes_read_array;
 }
 
-hal::result<neo_gps::gps_data_t> neo_gps::read()
-{
-  auto bytes_read_array = HAL_CHECK(read_serial());
-  gps_sentences_t sentence_objs;
-  gps_data_t gps_data;
 
-  for (auto& parser_ptr : m_parsers) {
-    switch (parser_ptr->getType()) {
-      case nmea_parser::ParserType::GGA: {
-        sentence_objs.gga_sentece.parse(bytes_read_array);
-        gps_data.gga_data = sentence_objs.gga_sentece.read();
-      } break;
-      case nmea_parser::ParserType::VTG: {
-        sentence_objs.vtg_sentece.parse(bytes_read_array);
-        gps_data.vtg_data = sentence_objs.vtg_sentece.read();
-      } break;
-      case nmea_parser::ParserType::GSA: {
-        sentence_objs.gsa_sentece.parse(bytes_read_array);
-        gps_data.gsa_data = sentence_objs.gsa_sentece.read();
-      } break;
-      case nmea_parser::ParserType::GSV: {
-        sentence_objs.gsv_sentece.parse(bytes_read_array);
-        gps_data.gsv_data = sentence_objs.gsv_sentece.read();
-      } break;
-      case nmea_parser::ParserType::RMC: {
-        sentence_objs.rmc_sentece.parse(bytes_read_array);
-        gps_data.rmc_data = sentence_objs.rmc_sentece.read();
-      } break;
-      case nmea_parser::ParserType::ZDA: {
-        sentence_objs.zda_sentece.parse(bytes_read_array);
-        gps_data.zda_data = sentence_objs.zda_sentece.read();
-      } break;
-      case nmea_parser::ParserType::PASHR: {
-        sentence_objs.pashr_sentece.parse(bytes_read_array);
-        gps_data.pashr_data = sentence_objs.pashr_sentece.read();
-      } break;
-      default:
-        sentence_objs = sentence_objs;
+hal::status nmea_router::route(std::span<const hal::byte> data) {
+  std::string_view data_str(reinterpret_cast<const char*>(data.data()), data.size());
+
+  while (!data_str.empty()) {
+    bool sentence_found = false;
+    for (auto* parser : m_parsers) {
+      if (data_str.starts_with(parser->sentence_header())) {
+        auto remaining_data = parser->parse(data);
+        data_str = std::string_view(reinterpret_cast<const char*>(remaining_data.data()), remaining_data.size());
+        sentence_found = true;
         break;
-    }
-  }
-
-  return result<neo_gps::gps_data_t>(gps_data);
-}
-
-neo_gps::nmea_parse_t parse(std::span<nmea_parser*> p_parsers,
-                            std::span<const hal::byte> p_data)
-{
-  bool end_token_found = false;
-
-  if (!p_data.empty()) {
-    for (auto& parser : p_parsers) {
-      if (parser->state() == nmea_parser::state_t::inactive) {
-        p_data = parser->parse(p_data);
       }
     }
+    if (!sentence_found) {
+      data_str.remove_prefix(1);
+    }
   }
 
-  return { p_data, end_token_found };
+  return hal::success();
 }
+
+
+
 
 }  // namespace hal::neo
