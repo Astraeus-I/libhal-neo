@@ -217,13 +217,14 @@ public:
   };
 
 
-  [[nodiscard]] static result<nmea_router> create(hal::serial& p_serial);
+  [[nodiscard]] static result<nmea_router> create(hal::serial& p_serial, const std::vector<nmea_parser*>& p_parsers = {});
   hal::result<std::span<const hal::byte>> read_serial();
   hal::status route(std::span<const hal::byte> data);
 
 private:
-  nmea_router(hal::serial& p_serial)
-    : m_serial(&p_serial)
+  nmea_router(hal::serial& p_serial, const std::vector<nmea_parser*>& p_parsers)
+    : m_serial(&p_serial),
+      m_parsers(p_parsers)
   {
   }
   hal::serial* m_serial;

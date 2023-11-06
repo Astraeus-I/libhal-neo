@@ -393,9 +393,9 @@ PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
 
 
 
-result<nmea_router> nmea_router::create(hal::serial& p_serial)
+result<nmea_router> nmea_router::create(hal::serial& p_serial, const std::vector<nmea_parser*>& p_parsers)
 {
-  nmea_router new_nmea_router(p_serial);
+  nmea_router new_nmea_router(p_serial, p_parsers);
   return new_nmea_router;
 }
 

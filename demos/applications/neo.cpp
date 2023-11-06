@@ -34,8 +34,12 @@ hal::status application(hardware_map& p_map)
   hal::neo::RMC_Sentence rmc_sentence;
   hal::neo::ZDA_Sentence zda_sentence;
 
+  std::vector<hal::neo::nmea_parser*> parsers = {
+    &gga_sentence, &vtg_sentence, &gsa_sentence, &gsv_sentence, &rmc_sentence,
+    &zda_sentence};
+
   hal::print(console, "Initializing GPS...\n");
-  auto GPS = HAL_CHECK(hal::neo::nmea_router::create(gps));
+  auto GPS = HAL_CHECK(hal::neo::nmea_router::create(gps, parsers));
 
   hal::print(console, "GPS created! \n");
   hal::print(
@@ -45,6 +49,7 @@ hal::status application(hardware_map& p_map)
   while (true) {
 
     auto GPS_data = HAL_CHECK(GPS.read_serial());
+    hal::print(console, "\n\nGPS data ready to route!\n");
     HAL_CHECK(GPS.route(GPS_data));
 
     auto GGA = gga_sentence.read();
