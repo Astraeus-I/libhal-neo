@@ -28,34 +28,6 @@
 
 namespace hal::neo {
 
-GGA_Sentence::GGA_Sentence()
-{
-}
-
-VTG_Sentence::VTG_Sentence()
-{
-}
-
-GSA_Sentence::GSA_Sentence()
-{
-}
-
-GSV_Sentence::GSV_Sentence()
-{
-}
-
-RMC_Sentence::RMC_Sentence()
-{
-}
-
-ZDA_Sentence::ZDA_Sentence()
-{
-}
-
-PASHR_Sentence::PASHR_Sentence()
-{
-}
-
 std::string GGA_Sentence::sentence_header() const
 {
   return std::string(gga_start_of_line);
@@ -91,23 +63,10 @@ std::string PASHR_Sentence::sentence_header() const
   return std::string(pashr_start_of_line);
 }
 
-std::span<const hal::byte> GGA_Sentence::parse(
-  std::span<const hal::byte> p_data)
+void GGA_Sentence::parse(std::string_view p_data)
 {
-  using namespace std::literals;
 
-  auto start_of_line_finder =
-    hal::stream_find(hal::as_bytes(gga_start_of_line));
-  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-  auto start_of_line_found = p_data | start_of_line_finder;
-  auto remaining_data = start_of_line_found | end_of_line_finder;
-
-  std::string_view gga_data(
-    reinterpret_cast<const char*>(start_of_line_found.data()),
-    remaining_data.data() - start_of_line_found.data());
-
-  int ret = sscanf(gga_data.data(),
+  int ret = sscanf(p_data.data(),
                    GGA_FORMAT,
                    &m_gga_data.time,
                    &m_gga_data.latitude,
@@ -124,8 +83,6 @@ std::span<const hal::byte> GGA_Sentence::parse(
                    m_gga_data.dgps_station_id_checksum);
 
   m_gga_data.is_locked = (ret < 5) ? false : true;
-
-  return std::span<const hal::byte>(p_data);
 }
 
 GGA_Sentence::gga_data_t GGA_Sentence::calculate_lon_lat(
@@ -165,23 +122,10 @@ GGA_Sentence::gga_data_t GGA_Sentence::read()
   return GGA_Sentence::gga_data_t(data);
 }
 
-std::span<const hal::byte> VTG_Sentence::parse(
-  std::span<const hal::byte> p_data)
+void VTG_Sentence::parse(std::string_view p_data)
 {
-  using namespace std::literals;
 
-  auto start_of_line_finder =
-    hal::stream_find(hal::as_bytes(vtg_start_of_line));
-  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-  auto start_of_line_found = p_data | start_of_line_finder;
-  auto remaining_data = start_of_line_found | end_of_line_finder;
-
-  std::string_view vtg_data(
-    reinterpret_cast<const char*>(start_of_line_found.data()),
-    remaining_data.data() - start_of_line_found.data());
-
-  sscanf(vtg_data.data(),
+  sscanf(p_data.data(),
          VTG_FORMAT,
          &m_vtg_data.true_track_degrees,
          &m_vtg_data.true_track_degrees_t,
@@ -191,8 +135,6 @@ std::span<const hal::byte> VTG_Sentence::parse(
          &m_vtg_data.ground_speed_knots_n,
          &m_vtg_data.ground_speed_kph,
          &m_vtg_data.ground_speed_kph_k);
-
-  return std::span<const hal::byte>(p_data);
 }
 
 VTG_Sentence::vtg_data_t VTG_Sentence::read()
@@ -200,23 +142,10 @@ VTG_Sentence::vtg_data_t VTG_Sentence::read()
   return VTG_Sentence::vtg_data_t(m_vtg_data);
 }
 
-std::span<const hal::byte> GSA_Sentence::parse(
-  std::span<const hal::byte> p_data)
+void GSA_Sentence::parse(std::string_view p_data)
 {
-  using namespace std::literals;
 
-  auto start_of_line_finder =
-    hal::stream_find(hal::as_bytes(gsa_start_of_line));
-  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-  auto start_of_line_found = p_data | start_of_line_finder;
-  auto remaining_data = start_of_line_found | end_of_line_finder;
-
-  std::string_view gsa_data(
-    reinterpret_cast<const char*>(start_of_line_found.data()),
-    remaining_data.data() - start_of_line_found.data());
-
-  sscanf(gsa_data.data(),
+  sscanf(p_data.data(),
          GSA_FORMAT,
          &m_gsa_data.mode,
          &m_gsa_data.fix_type,
@@ -235,8 +164,6 @@ std::span<const hal::byte> GSA_Sentence::parse(
          &m_gsa_data.pdop,
          &m_gsa_data.hdop,
          &m_gsa_data.vdop);
-
-  return std::span<const hal::byte>(p_data);
 }
 
 GSA_Sentence::gsa_data_t GSA_Sentence::read()
@@ -244,23 +171,10 @@ GSA_Sentence::gsa_data_t GSA_Sentence::read()
   return GSA_Sentence::gsa_data_t(m_gsa_data);
 }
 
-std::span<const hal::byte> GSV_Sentence::parse(
-  std::span<const hal::byte> p_data)
+void GSV_Sentence::parse(std::string_view p_data)
 {
-  using namespace std::literals;
 
-  auto start_of_line_finder =
-    hal::stream_find(hal::as_bytes(gsv_start_of_line));
-  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-  auto start_of_line_found = p_data | start_of_line_finder;
-  auto remaining_data = start_of_line_found | end_of_line_finder;
-
-  std::string_view gsv_data(
-    reinterpret_cast<const char*>(start_of_line_found.data()),
-    remaining_data.data() - start_of_line_found.data());
-
-  sscanf(gsv_data.data(),
+  sscanf(p_data.data(),
          GSV_FORMAT,
          &m_satellite_data.number_of_messages,
          &m_satellite_data.message_number,
@@ -269,8 +183,6 @@ std::span<const hal::byte> GSV_Sentence::parse(
          &m_satellite_data.elevation,
          &m_satellite_data.azimuth,
          &m_satellite_data.snr);
-
-  return std::span<const hal::byte>(p_data);
 }
 
 GSV_Sentence::satellite_data_t GSV_Sentence::read()
@@ -278,23 +190,10 @@ GSV_Sentence::satellite_data_t GSV_Sentence::read()
   return GSV_Sentence::satellite_data_t(m_satellite_data);
 }
 
-std::span<const hal::byte> RMC_Sentence::parse(
-  std::span<const hal::byte> p_data)
+void RMC_Sentence::parse(std::string_view p_data)
 {
-  using namespace std::literals;
 
-  auto start_of_line_finder =
-    hal::stream_find(hal::as_bytes(rmc_start_of_line));
-  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-  auto start_of_line_found = p_data | start_of_line_finder;
-  auto remaining_data = start_of_line_found | end_of_line_finder;
-
-  std::string_view rmc_data(
-    reinterpret_cast<const char*>(start_of_line_found.data()),
-    remaining_data.data() - start_of_line_found.data());
-
-  int ret = sscanf(rmc_data.data(),
+  int ret = sscanf(p_data.data(),
                    RMC_FORMAT,
                    &m_rmc_data.time,
                    &m_rmc_data.status,
@@ -309,8 +208,6 @@ std::span<const hal::byte> RMC_Sentence::parse(
                    &m_rmc_data.magnetic_direction);
 
   m_rmc_data.reading_status = ret;
-
-  return std::span<const hal::byte>(p_data);
 }
 
 RMC_Sentence::rmc_data_t RMC_Sentence::read()
@@ -318,30 +215,15 @@ RMC_Sentence::rmc_data_t RMC_Sentence::read()
   return RMC_Sentence::rmc_data_t(m_rmc_data);
 }
 
-std::span<const hal::byte> ZDA_Sentence::parse(
-  std::span<const hal::byte> p_data)
+void ZDA_Sentence::parse(std::string_view p_data)
 {
-  using namespace std::literals;
 
-  auto start_of_line_finder =
-    hal::stream_find(hal::as_bytes(zda_start_of_line));
-  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-  auto start_of_line_found = p_data | start_of_line_finder;
-  auto remaining_data = start_of_line_found | end_of_line_finder;
-
-  std::string_view zda_data(
-    reinterpret_cast<const char*>(start_of_line_found.data()),
-    remaining_data.data() - start_of_line_found.data());
-
-  sscanf(zda_data.data(),
+  sscanf(p_data.data(),
          ZDA_FORMAT,
          &m_zda_data.time,
          &m_zda_data.day,
          &m_zda_data.month,
          &m_zda_data.year);
-
-  return std::span<const hal::byte>(p_data);
 }
 
 ZDA_Sentence::zda_data_t ZDA_Sentence::read()
@@ -349,23 +231,10 @@ ZDA_Sentence::zda_data_t ZDA_Sentence::read()
   return ZDA_Sentence::zda_data_t(m_zda_data);
 }
 
-std::span<const hal::byte> PASHR_Sentence::parse(
-  std::span<const hal::byte> p_data)
+void PASHR_Sentence::parse(std::string_view p_data)
 {
-  using namespace std::literals;
 
-  auto start_of_line_finder =
-    hal::stream_find(hal::as_bytes(pashr_start_of_line));
-  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-  auto start_of_line_found = p_data | start_of_line_finder;
-  auto remaining_data = start_of_line_found | end_of_line_finder;
-
-  std::string_view pashr_data(
-    reinterpret_cast<const char*>(start_of_line_found.data()),
-    remaining_data.data() - start_of_line_found.data());
-
-  sscanf(pashr_data.data(),
+  sscanf(p_data.data(),
          PASHR_FORMAT,
          &m_pashr_data.heading,
          &m_pashr_data.pitch,
@@ -379,8 +248,6 @@ std::span<const hal::byte> PASHR_Sentence::parse(
          &m_pashr_data.heave_accuracy,
          &m_pashr_data.yaw_accuracy,
          &m_pashr_data.tilt_accuracy);
-
-  return std::span<const hal::byte>(p_data);
 }
 
 PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
@@ -388,12 +255,9 @@ PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
   return PASHR_Sentence::pashr_data_t(m_pashr_data);
 }
 
-
-
-
-
-
-result<nmea_router> nmea_router::create(hal::serial& p_serial, const std::vector<nmea_parser*>& p_parsers)
+result<nmea_router> nmea_router::create(
+  hal::serial& p_serial,
+  const std::vector<nmea_parser*>& p_parsers)
 {
   nmea_router new_nmea_router(p_serial, p_parsers);
   return new_nmea_router;
@@ -405,29 +269,26 @@ hal::result<std::span<const hal::byte>> nmea_router::read_serial()
   return bytes_read_array;
 }
 
+hal::result<std::string_view> nmea_router::route(
+  std::span<const hal::byte> p_data)
+{
 
-hal::status nmea_router::route(std::span<const hal::byte> data) {
-  std::string_view data_str(reinterpret_cast<const char*>(data.data()), data.size());
+  using namespace std::literals;
 
-  while (!data_str.empty()) {
-    bool sentence_found = false;
-    for (auto* parser : m_parsers) {
-      if (data_str.starts_with(parser->sentence_header())) {
-        auto remaining_data = parser->parse(data);
-        data_str = std::string_view(reinterpret_cast<const char*>(remaining_data.data()), remaining_data.size());
-        sentence_found = true;
-        break;
-      }
-    }
-    if (!sentence_found) {
-      data_str.remove_prefix(1);
-    }
+  for (auto* parser : m_parsers) {
+    auto start_of_line = parser->sentence_header();
+    auto start_of_line_finder = hal::stream_find(hal::as_bytes(start_of_line));
+    auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
+
+    auto start_of_line_found = p_data | start_of_line_finder;
+    auto remaining_data = start_of_line_found | end_of_line_finder;
+
+    std::string_view data(
+      reinterpret_cast<const char*>(start_of_line_found.data()),
+      remaining_data.data() - start_of_line_found.data());
+    parser->parse(data);
+    return data;
   }
-
-  return hal::success();
 }
-
-
-
 
 }  // namespace hal::neo

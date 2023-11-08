@@ -50,7 +50,11 @@ hal::status application(hardware_map& p_map)
 
     auto GPS_data = HAL_CHECK(GPS.read_serial());
     hal::print(console, "\n\nGPS data ready to route!\n");
-    HAL_CHECK(GPS.route(GPS_data));
+    auto data = HAL_CHECK(GPS.route(GPS_data));
+
+
+    hal::print<1024>(console, "\n\nGPS data routed! %s\n\n", data.data());
+    hal::print(console, "\n\n");
 
     auto GGA = gga_sentence.read();
     auto VTG = vtg_sentence.read();

@@ -30,7 +30,9 @@ namespace hal::neo {
 class GGA_Sentence : public nmea_parser
 {
 public:
-  GGA_Sentence();
+  GGA_Sentence()
+  {
+  }
   struct gga_data_t
   {
     bool is_locked = false;
@@ -49,7 +51,7 @@ public:
     char time_since_last_dgps_update;
     char dgps_station_id_checksum[10];
   };
-  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  void parse(std::string_view p_data) override;
   gga_data_t read();
   gga_data_t calculate_lon_lat(const gga_data_t& p_gps_data);
   std::string sentence_header() const override;
@@ -61,7 +63,9 @@ private:
 class VTG_Sentence : public nmea_parser
 {
 public:
-  VTG_Sentence();
+  VTG_Sentence()
+  {
+  }
   struct vtg_data_t
   {
     float true_track_degrees;
@@ -74,7 +78,7 @@ public:
     char ground_speed_kph_k;
     char mode;
   };
-  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
   vtg_data_t read();
 
@@ -85,7 +89,9 @@ private:
 class GSA_Sentence : public nmea_parser
 {
 public:
-  GSA_Sentence();
+  GSA_Sentence()
+  {
+  }
   struct gsa_data_t
   {
     char mode;
@@ -95,7 +101,7 @@ public:
     float hdop;
     float vdop;
   };
-  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
   gsa_data_t read();
 
@@ -106,7 +112,9 @@ private:
 class GSV_Sentence : public nmea_parser
 {
 public:
-  GSV_Sentence();
+  GSV_Sentence()
+  {
+  }
   struct satellite_data_t
   {
     int number_of_messages;
@@ -117,7 +125,7 @@ public:
     int azimuth;
     int snr;
   };
-  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
   satellite_data_t read();
 
@@ -128,7 +136,9 @@ private:
 class RMC_Sentence : public nmea_parser
 {
 public:
-  RMC_Sentence();
+  RMC_Sentence()
+  {
+  }
   struct rmc_data_t
   {
 
@@ -146,7 +156,7 @@ public:
     float magnetic_variation;
     char magnetic_direction;
   };
-  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
   rmc_data_t read();
 
@@ -157,7 +167,9 @@ private:
 class ZDA_Sentence : public nmea_parser
 {
 public:
-  ZDA_Sentence();
+  ZDA_Sentence()
+  {
+  }
   struct zda_data_t
   {
     float time;
@@ -165,7 +177,7 @@ public:
     int month;
     int year;
   };
-  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
   zda_data_t read();
 
@@ -176,7 +188,9 @@ private:
 class PASHR_Sentence : public nmea_parser
 {
 public:
-  PASHR_Sentence();
+  PASHR_Sentence()
+  {
+  }
   struct pashr_data_t
   {
     float heading;
@@ -192,7 +206,7 @@ public:
     float yaw_accuracy;
     float tilt_accuracy;
   };
-  std::span<const hal::byte> parse(std::span<const hal::byte> p_data) override;
+  void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
   pashr_data_t read();
 
@@ -200,31 +214,26 @@ private:
   pashr_data_t m_pashr_data;
 };
 
-
-
-
-
-
 class nmea_router
 {
 
 public:
-
   enum class error_handling
   {
     thow_exeption,
     ignore_failures
   };
 
-
-  [[nodiscard]] static result<nmea_router> create(hal::serial& p_serial, const std::vector<nmea_parser*>& p_parsers = {});
+  [[nodiscard]] static result<nmea_router> create(
+    hal::serial& p_serial,
+    const std::vector<nmea_parser*>& p_parsers = {});
   hal::result<std::span<const hal::byte>> read_serial();
-  hal::status route(std::span<const hal::byte> data);
+  hal::result<std::string_view> route(std::span<const hal::byte> data);
 
 private:
   nmea_router(hal::serial& p_serial, const std::vector<nmea_parser*>& p_parsers)
-    : m_serial(&p_serial),
-      m_parsers(p_parsers)
+    : m_serial(&p_serial)
+    , m_parsers(p_parsers)
   {
   }
   hal::serial* m_serial;
