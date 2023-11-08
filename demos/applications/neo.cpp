@@ -34,9 +34,10 @@ hal::status application(hardware_map& p_map)
   hal::neo::RMC_Sentence rmc_sentence;
   hal::neo::ZDA_Sentence zda_sentence;
 
-  std::vector<hal::neo::nmea_parser*> parsers = {
-    &gga_sentence, &vtg_sentence, &gsa_sentence, &gsv_sentence, &rmc_sentence,
-    &zda_sentence};
+  std::array<hal::neo::nmea_parser*, 6> parsers = {
+    &gga_sentence, &vtg_sentence, &gsa_sentence,
+    &gsv_sentence, &rmc_sentence, &zda_sentence
+  };
 
   hal::print(console, "Initializing GPS...\n");
   auto GPS = HAL_CHECK(hal::neo::nmea_router::create(gps, parsers));
@@ -47,14 +48,7 @@ hal::status application(hardware_map& p_map)
     "***You may need to wait a few minutes before having a full GPS lock***\n");
 
   while (true) {
-
-    auto GPS_data = HAL_CHECK(GPS.read_serial());
-    hal::print(console, "\n\nGPS data ready to route!\n");
-    auto data = HAL_CHECK(GPS.route(GPS_data));
-
-
-    hal::print<1024>(console, "\n\nGPS data routed! %s\n\n", data.data());
-    hal::print(console, "\n\n");
+    HAL_CHECK(GPS.parse());
 
     auto GGA = gga_sentence.read();
     auto VTG = vtg_sentence.read();
@@ -145,6 +139,10 @@ hal::status application(hardware_map& p_map)
                     ZDA.day,
                     ZDA.month,
                     ZDA.year);
+
+    hal::print(console,
+               "==============================================================="
+               "=================\n");
 
     hal::delay(clock, 1000ms);
   }

@@ -257,7 +257,7 @@ PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
 
 result<nmea_router> nmea_router::create(
   hal::serial& p_serial,
-  const std::vector<nmea_parser*>& p_parsers)
+  const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
 {
   nmea_router new_nmea_router(p_serial, p_parsers);
   return new_nmea_router;
@@ -270,25 +270,32 @@ hal::result<std::span<const hal::byte>> nmea_router::read_serial()
 }
 
 hal::result<std::string_view> nmea_router::route(
+  nmea_parser* p_parser,
   std::span<const hal::byte> p_data)
 {
-
   using namespace std::literals;
 
+  auto start_of_line = p_parser->sentence_header();
+  auto start_of_line_finder = hal::stream_find(hal::as_bytes(start_of_line));
+  auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
+
+  auto start_of_line_found = p_data | start_of_line_finder;
+  auto remaining_data = start_of_line_found | end_of_line_finder;
+
+  std::string_view sentence_data(
+    reinterpret_cast<const char*>(start_of_line_found.data()),
+    remaining_data.data() - start_of_line_found.data());
+  return sentence_data;
+}
+
+hal::status nmea_router::parse()
+{
   for (auto* parser : m_parsers) {
-    auto start_of_line = parser->sentence_header();
-    auto start_of_line_finder = hal::stream_find(hal::as_bytes(start_of_line));
-    auto end_of_line_finder = hal::stream_find(hal::as_bytes(end_of_line));
-
-    auto start_of_line_found = p_data | start_of_line_finder;
-    auto remaining_data = start_of_line_found | end_of_line_finder;
-
-    std::string_view data(
-      reinterpret_cast<const char*>(start_of_line_found.data()),
-      remaining_data.data() - start_of_line_found.data());
-    parser->parse(data);
-    return data;
+    auto data = HAL_CHECK(read_serial());
+    auto sentence_data = HAL_CHECK(route(parser, data));
+    parser->parse(sentence_data);
   }
+  return hal::success();
 }
 
 }  // namespace hal::neo

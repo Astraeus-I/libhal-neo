@@ -23,7 +23,7 @@
 #include <libhal-util/streams.hpp>
 #include <libhal/functional.hpp>
 #include <libhal/serial.hpp>
-#include <vector>
+#include <array>
 
 namespace hal::neo {
 
@@ -36,20 +36,20 @@ public:
   struct gga_data_t
   {
     bool is_locked = false;
-    float time;
-    float latitude;
-    char latitude_direction;
-    float longitude;
-    char longitude_direction;
-    int fix_status;
-    int satellites_used;
-    float hdop;
-    float altitude;
-    char altitude_units;
-    float height_of_geoid;
-    char height_of_geoid_units;
-    char time_since_last_dgps_update;
-    char dgps_station_id_checksum[10];
+    float time = 0.0f;
+    float latitude = 0.0f;
+    char latitude_direction = ' ';
+    float longitude = 0.0f;
+    char longitude_direction = ' ';
+    int fix_status = 0;
+    int satellites_used = 0;
+    float hdop = 0.0f;
+    float altitude = 0.0f;
+    char altitude_units = ' ';
+    float height_of_geoid = 0.0f;
+    char height_of_geoid_units = ' ';
+    char time_since_last_dgps_update = ' ';
+    char dgps_station_id_checksum[10] = {'\0'};
   };
   void parse(std::string_view p_data) override;
   gga_data_t read();
@@ -68,14 +68,14 @@ public:
   }
   struct vtg_data_t
   {
-    float true_track_degrees;
-    char true_track_degrees_t;
-    float magnetic_track_degrees;
-    char magnetic_track_degrees_t;
-    float ground_speed_knots;
-    char ground_speed_knots_n;
-    float ground_speed_kph;
-    char ground_speed_kph_k;
+    float true_track_degrees = 0.0f;
+    char true_track_degrees_t = ' ';
+    float magnetic_track_degrees = 0.0f;
+    char magnetic_track_degrees_t = ' ';
+    float ground_speed_knots = 0.0f;
+    char ground_speed_knots_n = ' ';
+    float ground_speed_kph = 0.0f;
+    char ground_speed_kph_k = ' ';
     char mode;
   };
   void parse(std::string_view p_data) override;
@@ -94,12 +94,12 @@ public:
   }
   struct gsa_data_t
   {
-    char mode;
-    int fix_type;
+    char mode = ' ';
+    int fix_type = 0;
     std::array<int, 12> satellite_ids{};  // assuming up to 12 satellites
-    float pdop;
-    float hdop;
-    float vdop;
+    float pdop = 0.0f;
+    float hdop = 0.0f;
+    float vdop = 0.0f;
   };
   void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
@@ -117,13 +117,13 @@ public:
   }
   struct satellite_data_t
   {
-    int number_of_messages;
-    int message_number;
-    int satellites_in_view;
-    int id;
-    int elevation;
-    int azimuth;
-    int snr;
+    int number_of_messages = 0;
+    int message_number = 0;
+    int satellites_in_view = 0;
+    int id = 0;
+    int elevation = 0;
+    int azimuth = 0;
+    int snr = 0;
   };
   void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
@@ -144,17 +144,17 @@ public:
 
     int reading_status = 0;
 
-    float time;
-    char status;
-    float latitude;
-    char latitude_direction;
-    float longitude;
-    char longitude_direction;
-    float speed;
-    float track_angle;
-    int date;
-    float magnetic_variation;
-    char magnetic_direction;
+    float time = 0.0f;
+    char status = ' ';
+    float latitude = 0.0f;
+    char latitude_direction = ' ';
+    float longitude = 0.0f;
+    char longitude_direction = ' ';
+    float speed = 0.0f;
+    float track_angle = 0.0f;
+    int date = 0;
+    float magnetic_variation = 0.0f;
+    char magnetic_direction = ' ';
   };
   void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
@@ -172,10 +172,10 @@ public:
   }
   struct zda_data_t
   {
-    float time;
-    int day;
-    int month;
-    int year;
+    float time = 0.0f;
+    int day = 0;
+    int month = 0;
+    int year = 0;
   };
   void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
@@ -193,18 +193,18 @@ public:
   }
   struct pashr_data_t
   {
-    float heading;
-    float pitch;
-    float roll;
-    float heave;
-    float yaw;
-    float tilt;
-    float roll_accuracy;
-    float pitch_accuracy;
-    float heading_accuracy;
-    float heave_accuracy;
-    float yaw_accuracy;
-    float tilt_accuracy;
+    float heading = 0.0f;
+    float pitch = 0.0f;
+    float roll = 0.0f;
+    float heave = 0.0f;
+    float yaw = 0.0f;
+    float tilt = 0.0f;
+    float roll_accuracy = 0.0f;
+    float pitch_accuracy = 0.0f;
+    float heading_accuracy = 0.0f;
+    float heave_accuracy = 0.0f;
+    float yaw_accuracy = 0.0f;
+    float tilt_accuracy = 0.0f;
   };
   void parse(std::string_view p_data) override;
   std::string sentence_header() const override;
@@ -226,18 +226,20 @@ public:
 
   [[nodiscard]] static result<nmea_router> create(
     hal::serial& p_serial,
-    const std::vector<nmea_parser*>& p_parsers = {});
+    const std::array<hal::neo::nmea_parser*, 6>& p_parsers = {});
   hal::result<std::span<const hal::byte>> read_serial();
-  hal::result<std::string_view> route(std::span<const hal::byte> data);
+  hal::result<std::string_view> route(nmea_parser* p_parser, std::span<const hal::byte> p_data);
+  hal::status parse();
 
 private:
-  nmea_router(hal::serial& p_serial, const std::vector<nmea_parser*>& p_parsers)
+  nmea_router(hal::serial& p_serial, const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
     : m_serial(&p_serial)
     , m_parsers(p_parsers)
   {
   }
   hal::serial* m_serial;
-  std::vector<nmea_parser*> m_parsers;
+
+  std::array<hal::neo::nmea_parser*, 6> m_parsers;
   std::array<hal::byte, 1020> m_gps_buffer;
 };
 
