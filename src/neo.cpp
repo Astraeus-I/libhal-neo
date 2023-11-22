@@ -25,42 +25,44 @@
 #include <libhal/serial.hpp>
 
 #include "neo-constants.hpp"
+#include <libhal-util/serial.hpp>
+
 
 namespace hal::neo {
 
-std::string GGA_Sentence::sentence_header() const
+std::string_view GGA_Sentence::sentence_header() const
 {
-  return std::string(gga_start_of_line);
+  return std::string_view(gga_start_of_line);
 }
 
-std::string VTG_Sentence::sentence_header() const
+std::string_view VTG_Sentence::sentence_header() const
 {
-  return std::string(vtg_start_of_line);
+  return std::string_view(vtg_start_of_line);
 }
 
-std::string GSA_Sentence::sentence_header() const
+std::string_view GSA_Sentence::sentence_header() const
 {
-  return std::string(gsa_start_of_line);
+  return std::string_view(gsa_start_of_line);
 }
 
-std::string GSV_Sentence::sentence_header() const
+std::string_view GSV_Sentence::sentence_header() const
 {
-  return std::string(gsv_start_of_line);
+  return std::string_view(gsv_start_of_line);
 }
 
-std::string RMC_Sentence::sentence_header() const
+std::string_view RMC_Sentence::sentence_header() const
 {
-  return std::string(rmc_start_of_line);
+  return std::string_view(rmc_start_of_line);
 }
 
-std::string ZDA_Sentence::sentence_header() const
+std::string_view ZDA_Sentence::sentence_header() const
 {
-  return std::string(zda_start_of_line);
+  return std::string_view(zda_start_of_line);
 }
 
-std::string PASHR_Sentence::sentence_header() const
+std::string_view PASHR_Sentence::sentence_header() const
 {
-  return std::string(pashr_start_of_line);
+  return std::string_view(pashr_start_of_line);
 }
 
 void GGA_Sentence::parse(std::string_view p_data)
@@ -256,10 +258,11 @@ PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
 }
 
 result<nmea_router> nmea_router::create(
+  hal::serial& p_console,
   hal::serial& p_serial,
   const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
 {
-  nmea_router new_nmea_router(p_serial, p_parsers);
+  nmea_router new_nmea_router(p_console, p_serial, p_parsers);
   return new_nmea_router;
 }
 
@@ -290,10 +293,14 @@ hal::result<std::string_view> nmea_router::route(
 
 hal::status nmea_router::parse()
 {
+  auto data = HAL_CHECK(read_serial());
+  // hal::print<1024>(*m_console, "GPS data: %s\n", data.data());
   for (auto* parser : m_parsers) {
-    auto data = HAL_CHECK(read_serial());
+    hal:print<1024>(*m_console, "\n\nParsing data with parser: %s\n", parser->sentence_header().data());
     auto sentence_data = HAL_CHECK(route(parser, data));
+    print<1024>(*m_console, "\nSentence data: %s\n\n", sentence_data.data());
     parser->parse(sentence_data);
+    print(*m_console, "Done parsing\n\n");
   }
   return hal::success();
 }

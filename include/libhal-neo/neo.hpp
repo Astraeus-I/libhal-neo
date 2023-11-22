@@ -25,6 +25,7 @@
 #include <libhal/serial.hpp>
 #include <array>
 
+
 namespace hal::neo {
 
 class GGA_Sentence : public nmea_parser
@@ -54,7 +55,7 @@ public:
   void parse(std::string_view p_data) override;
   gga_data_t read();
   gga_data_t calculate_lon_lat(const gga_data_t& p_gps_data);
-  std::string sentence_header() const override;
+  std::string_view sentence_header() const override;
 
 private:
   gga_data_t m_gga_data;
@@ -79,7 +80,7 @@ public:
     char mode;
   };
   void parse(std::string_view p_data) override;
-  std::string sentence_header() const override;
+  std::string_view sentence_header() const override;
   vtg_data_t read();
 
 private:
@@ -102,7 +103,7 @@ public:
     float vdop = 0.0f;
   };
   void parse(std::string_view p_data) override;
-  std::string sentence_header() const override;
+  std::string_view sentence_header() const override;
   gsa_data_t read();
 
 private:
@@ -126,7 +127,7 @@ public:
     int snr = 0;
   };
   void parse(std::string_view p_data) override;
-  std::string sentence_header() const override;
+  std::string_view sentence_header() const override;
   satellite_data_t read();
 
 private:
@@ -157,7 +158,7 @@ public:
     char magnetic_direction = ' ';
   };
   void parse(std::string_view p_data) override;
-  std::string sentence_header() const override;
+  std::string_view sentence_header() const override;
   rmc_data_t read();
 
 private:
@@ -178,7 +179,7 @@ public:
     int year = 0;
   };
   void parse(std::string_view p_data) override;
-  std::string sentence_header() const override;
+  std::string_view sentence_header() const override;
   zda_data_t read();
 
 private:
@@ -207,7 +208,7 @@ public:
     float tilt_accuracy = 0.0f;
   };
   void parse(std::string_view p_data) override;
-  std::string sentence_header() const override;
+  std::string_view sentence_header() const override;
   pashr_data_t read();
 
 private:
@@ -225,20 +226,25 @@ public:
   };
 
   [[nodiscard]] static result<nmea_router> create(
+    hal::serial& p_console,
     hal::serial& p_serial,
     const std::array<hal::neo::nmea_parser*, 6>& p_parsers = {});
-  hal::result<std::span<const hal::byte>> read_serial();
-  hal::result<std::string_view> route(nmea_parser* p_parser, std::span<const hal::byte> p_data);
   hal::status parse();
 
 private:
-  nmea_router(hal::serial& p_serial, const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
-    : m_serial(&p_serial)
+  nmea_router(hal::serial& p_console, hal::serial& p_serial, const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
+
+    : m_console(&p_console)
+    , m_serial(&p_serial)
     , m_parsers(p_parsers)
   {
   }
-  hal::serial* m_serial;
+    hal::result<std::span<const hal::byte>> read_serial();
+    hal::result<std::string_view> route(nmea_parser* p_parser, std::span<const hal::byte> p_data);
 
+
+  hal::serial* m_serial;
+  hal::serial* m_console;
   std::array<hal::neo::nmea_parser*, 6> m_parsers;
   std::array<hal::byte, 1020> m_gps_buffer;
 };

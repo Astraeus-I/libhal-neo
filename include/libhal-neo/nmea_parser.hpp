@@ -58,7 +58,7 @@ public:
    *
    * @return std::string - The sentence header unique to this parser.
    */
-  virtual std::string sentence_header() const = 0;
+  virtual std::string_view sentence_header() const = 0;
 
   /**
    * @brief Parse byte data and find

@@ -40,7 +40,7 @@ hal::status application(hardware_map& p_map)
   };
 
   hal::print(console, "Initializing GPS...\n");
-  auto GPS = HAL_CHECK(hal::neo::nmea_router::create(gps, parsers));
+  auto GPS = HAL_CHECK(hal::neo::nmea_router::create(console, gps, parsers));
 
   hal::print(console, "GPS created! \n");
   hal::print(
