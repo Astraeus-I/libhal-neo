@@ -27,7 +27,6 @@
 #include "neo-constants.hpp"
 #include <libhal-util/serial.hpp>
 
-
 namespace hal::neo {
 
 std::string_view GGA_Sentence::sentence_header() const
@@ -294,11 +293,37 @@ hal::result<std::string_view> nmea_router::route(
 hal::status nmea_router::parse()
 {
   auto data = HAL_CHECK(read_serial());
-  // hal::print<1024>(*m_console, "GPS data: %s\n", data.data());
+  if (data.empty()) {
+    return hal::new_error(std::errc::timed_out);
+  }
+
   for (auto* parser : m_parsers) {
-    hal:print<1024>(*m_console, "\n\nParsing data with parser: %s\n", parser->sentence_header().data());
-    auto sentence_data = HAL_CHECK(route(parser, data));
-    print<1024>(*m_console, "\nSentence data: %s\n\n", sentence_data.data());
+    if (parser == nullptr) {
+      continue;
+    }
+    hal::print<1024>(*m_console,
+                     "\n\nParsing data with parser: %s\n",
+                     parser->sentence_header().data());
+
+    auto result = route(parser, data);
+    if (!result.has_value()) {
+      // Handle error in routing
+      hal::print<1024>(*m_console,
+                       "Error in routing data for parser: %s\n",
+                       parser->sentence_header().data());
+      continue;
+    }
+    auto sentence_data = result.value();
+
+    if (sentence_data.empty()) {
+      // Handle empty sentence data
+      hal::print<1024>(*m_console,
+                       "Empty sentence data for parser: %s\n",
+                       parser->sentence_header().data());
+      continue;
+    }
+
+    print<1024>(*m_console, "\nSentence data: \n%s\n\n", sentence_data.data());
     parser->parse(sentence_data);
     print(*m_console, "Done parsing\n\n");
   }

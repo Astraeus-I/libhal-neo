@@ -18,13 +18,12 @@
 #include <cstdint>
 #include <string_view>
 
+#include <array>
 #include <libhal-neo/nmea_parser.hpp>
 #include <libhal-util/as_bytes.hpp>
 #include <libhal-util/streams.hpp>
 #include <libhal/functional.hpp>
 #include <libhal/serial.hpp>
-#include <array>
-
 
 namespace hal::neo {
 
@@ -50,7 +49,7 @@ public:
     float height_of_geoid = 0.0f;
     char height_of_geoid_units = ' ';
     char time_since_last_dgps_update = ' ';
-    char dgps_station_id_checksum[10] = {'\0'};
+    char dgps_station_id_checksum[10] = { '\0' };
   };
   void parse(std::string_view p_data) override;
   gga_data_t read();
@@ -232,19 +231,21 @@ public:
   hal::status parse();
 
 private:
-  nmea_router(hal::serial& p_console, hal::serial& p_serial, const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
+  nmea_router(hal::serial& p_console,
+              hal::serial& p_serial,
+              const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
 
     : m_console(&p_console)
     , m_serial(&p_serial)
     , m_parsers(p_parsers)
   {
   }
-    hal::result<std::span<const hal::byte>> read_serial();
-    hal::result<std::string_view> route(nmea_parser* p_parser, std::span<const hal::byte> p_data);
+  hal::result<std::span<const hal::byte>> read_serial();
+  hal::result<std::string_view> route(nmea_parser* p_parser,
+                                      std::span<const hal::byte> p_data);
 
-
-  hal::serial* m_serial;
   hal::serial* m_console;
+  hal::serial* m_serial;
   std::array<hal::neo::nmea_parser*, 6> m_parsers;
   std::array<hal::byte, 1020> m_gps_buffer;
 };

@@ -35,9 +35,9 @@ hal::status application(hardware_map& p_map)
   hal::neo::ZDA_Sentence zda_sentence;
 
   std::array<hal::neo::nmea_parser*, 6> parsers = {
-    &gga_sentence, &vtg_sentence, &gsa_sentence,
-    &gsv_sentence, &rmc_sentence, &zda_sentence
+    &gga_sentence, &vtg_sentence, &gsa_sentence, &rmc_sentence
   };
+  
 
   hal::print(console, "Initializing GPS...\n");
   auto GPS = HAL_CHECK(hal::neo::nmea_router::create(console, gps, parsers));
