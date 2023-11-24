@@ -257,11 +257,10 @@ PASHR_Sentence::pashr_data_t PASHR_Sentence::read()
 }
 
 result<nmea_router> nmea_router::create(
-  hal::serial& p_console,
   hal::serial& p_serial,
   const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
 {
-  nmea_router new_nmea_router(p_console, p_serial, p_parsers);
+  nmea_router new_nmea_router(p_serial, p_parsers);
   return new_nmea_router;
 }
 
@@ -301,31 +300,18 @@ hal::status nmea_router::parse()
     if (parser == nullptr) {
       continue;
     }
-    hal::print<1024>(*m_console,
-                     "\n\nParsing data with parser: %s\n",
-                     parser->sentence_header().data());
 
     auto result = route(parser, data);
     if (!result.has_value()) {
-      // Handle error in routing
-      hal::print<1024>(*m_console,
-                       "Error in routing data for parser: %s\n",
-                       parser->sentence_header().data());
       continue;
     }
     auto sentence_data = result.value();
 
     if (sentence_data.empty()) {
-      // Handle empty sentence data
-      hal::print<1024>(*m_console,
-                       "Empty sentence data for parser: %s\n",
-                       parser->sentence_header().data());
       continue;
     }
 
-    print<1024>(*m_console, "\nSentence data: \n%s\n\n", sentence_data.data());
     parser->parse(sentence_data);
-    print(*m_console, "Done parsing\n\n");
   }
   return hal::success();
 }

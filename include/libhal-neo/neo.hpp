@@ -225,18 +225,15 @@ public:
   };
 
   [[nodiscard]] static result<nmea_router> create(
-    hal::serial& p_console,
     hal::serial& p_serial,
     const std::array<hal::neo::nmea_parser*, 6>& p_parsers = {});
   hal::status parse();
 
 private:
-  nmea_router(hal::serial& p_console,
-              hal::serial& p_serial,
+  nmea_router(hal::serial& p_serial,
               const std::array<hal::neo::nmea_parser*, 6>& p_parsers)
 
-    : m_console(&p_console)
-    , m_serial(&p_serial)
+    : m_serial(&p_serial)
     , m_parsers(p_parsers)
   {
   }
@@ -244,7 +241,6 @@ private:
   hal::result<std::string_view> route(nmea_parser* p_parser,
                                       std::span<const hal::byte> p_data);
 
-  hal::serial* m_console;
   hal::serial* m_serial;
   std::array<hal::neo::nmea_parser*, 6> m_parsers;
   std::array<hal::byte, 1020> m_gps_buffer;

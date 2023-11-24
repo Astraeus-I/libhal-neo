@@ -34,13 +34,13 @@ hal::status application(hardware_map& p_map)
   hal::neo::RMC_Sentence rmc_sentence;
   hal::neo::ZDA_Sentence zda_sentence;
 
+  // list of parsers to be used by the router
   std::array<hal::neo::nmea_parser*, 6> parsers = {
     &gga_sentence, &vtg_sentence, &gsa_sentence, &rmc_sentence
   };
-  
 
   hal::print(console, "Initializing GPS...\n");
-  auto GPS = HAL_CHECK(hal::neo::nmea_router::create(console, gps, parsers));
+  auto GPS = HAL_CHECK(hal::neo::nmea_router::create(gps, parsers));
 
   hal::print(console, "GPS created! \n");
   hal::print(
@@ -142,7 +142,7 @@ hal::status application(hardware_map& p_map)
 
     hal::print(console,
                "==============================================================="
-               "=================\n");
+               "=================\n\n\n\n");
 
     hal::delay(clock, 1000ms);
   }
