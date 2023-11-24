@@ -35,7 +35,7 @@ hal::status application(hardware_map& p_map)
   hal::neo::ZDA_Sentence zda_sentence;
 
   std::array<hal::neo::nmea_parser*, 6> parsers = {
-    &gga_sentence, &vtg_sentence, &gsa_sentence, &rmc_sentence
+    &gga_sentence, &vtg_sentence, &gsa_sentence, &gsv_sentence, &rmc_sentence
   };
   
 
